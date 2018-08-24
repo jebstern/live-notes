@@ -26,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
     _username = myController.text;
     
     if (_username.isNotEmpty) {
-      prefs.setString('counter', _username);
+      prefs.setString('username', _username);
         Navigator.of(context).pushReplacementNamed('/NotesPage');
     }
   }

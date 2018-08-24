@@ -5,6 +5,9 @@ import 'dart:async';
 enum EditNoteActions {
   cancel, save
 }
+enum AddNoteActions {
+  cancel, add
+}
 
 class NotesPage extends StatefulWidget {
   NotesPage({Key key, this.title}) : super(key: key);
@@ -19,12 +22,16 @@ class _NotesPageState extends State<NotesPage> {
   int _counter = 0;
   final titleController = TextEditingController();
   final textController = TextEditingController();
+  final addNoteTitleController = TextEditingController();
+  final addNoteTextController = TextEditingController();
 
   @override
   void dispose() {
     // Clean up the controller when the Widget is disposed
     titleController.dispose();
     textController.dispose();
+    addNoteTitleController.dispose();
+    addNoteTextController.dispose();  
     super.dispose();
   }
 
@@ -53,7 +60,7 @@ class _NotesPageState extends State<NotesPage> {
             );
           }),
       floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed:  () {_createNewNote();},
         tooltip: 'Increment',
         child: new Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -68,6 +75,72 @@ class _NotesPageState extends State<NotesPage> {
         await transaction.update(document.reference, {'archived': true});
       }
     });
+  }
+
+  Future<Null> _createNewNote() async {
+
+    addNoteTitleController.text = 'title';
+    addNoteTextController.text = 'text';
+
+    switch (await showDialog<AddNoteActions>(
+      context: context,
+      builder: (BuildContext context) {
+        return new SimpleDialog(
+          children: <Widget>[
+            new Padding(
+              padding: new EdgeInsets.only(left: 20.0,right: 20.0),
+              child: TextField(
+                autofocus: true,
+                controller: addNoteTitleController,
+                decoration: InputDecoration(
+                  labelText: 'Title'
+                ),
+                maxLines: 1,
+                maxLength: 100,
+              ),
+            ),
+            new Padding(
+              padding: new EdgeInsets.only(left: 20.0,right: 20.0),
+              child: TextField(
+                autofocus: true,
+                controller: addNoteTextController,
+                decoration: InputDecoration(
+                  labelText: 'Text'
+                ),
+                maxLines: 4,
+                maxLength: 300,
+              ),
+            ),
+            new ButtonBar(
+                  children: <Widget>[
+                    new FlatButton(
+                      child: Text('CANCEL'),
+                      textColor: Colors.redAccent,
+                      onPressed: () {Navigator.pop(context, AddNoteActions.cancel);},
+                    ),
+                    new FlatButton(
+                      child: const Text('SAVE'),
+                      textColor: Colors.blue,
+                      onPressed: () {Navigator.pop(context, AddNoteActions.add);},
+                    ),
+                  ],
+                ),
+          ],
+        );
+      }
+    )) {
+      case AddNoteActions.add:
+        Firestore.instance.collection('notes').document()
+          .setData({
+            'title': addNoteTitleController.text,
+            'text': addNoteTextController.text,
+            'archived': false,
+          });        
+      break;
+      case AddNoteActions.cancel:
+        // do nothing...
+      break;
+    }
   }
 
   Future<Null> _askedToLead(DocumentSnapshot document) async {

@@ -15,7 +15,7 @@ class _SplashPageState extends State<SplashPage> {
 
   void navigationPage() async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String _username = prefs.getString('counter') ?? '';
+    String _username = prefs.getString('username') ?? '';
     if (_username.isNotEmpty) {
         Navigator.of(context).pushReplacementNamed('/NotesPage');
     } else {
