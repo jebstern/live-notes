@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "689295572987",
+    "firebase_url": "https://livenotes-dda7b.firebaseio.com",
+    "project_id": "livenotes-dda7b",
+    "storage_bucket": "livenotes-dda7b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:689295572987:android:544a13345f3f2dd4",
+        "android_client_info": {
+          "package_name": "com.jebstern.livenotes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "689295572987-c2gdg7poc8ll8n53nth5tdallcimn3jf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jebstern.livenotes",
+            "certificate_hash": "c0aa75196e82cf1306118277b203f95c1cefde07"
+          }
+        },
+        {
+          "client_id": "689295572987-ff4tahn2rrbnk62m5u9ojrhsg85n7a6v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAk5znGEHQzUeXUNPNNbs-_49iEj4H79Lc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "689295572987-ff4tahn2rrbnk62m5u9ojrhsg85n7a6v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
