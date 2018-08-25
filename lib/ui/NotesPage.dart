@@ -9,6 +9,10 @@ enum AddNoteActions {
   cancel, add
 }
 
+enum NoteStatus {
+  active, archived, all
+}
+
 class NotesPage extends StatefulWidget {
   NotesPage({Key key, this.title}) : super(key: key);
 
@@ -24,6 +28,14 @@ class _NotesPageState extends State<NotesPage> {
   final textController = TextEditingController();
   final addNoteTitleController = TextEditingController();
   final addNoteTextController = TextEditingController();
+  Choice _selectedChoice = choices[0]; // The app's "state".
+  String _noteStatus  = 'all';
+
+  void _select(Choice choice) {
+    if (choice.title == 'Settings') {
+      _showNoteStatusSettings();
+    }
+  }
 
   @override
   void dispose() {
@@ -40,9 +52,23 @@ class _NotesPageState extends State<NotesPage> {
     return new Scaffold(
       appBar: new AppBar(
         title: new Text('Live Notes'),
+        actions: <Widget>[
+          // overflow menu
+          PopupMenuButton<Choice>(
+            onSelected: _select,
+            itemBuilder: (BuildContext context) {
+              return choices.map((Choice choice) {
+                return PopupMenuItem<Choice>(
+                  value: choice,
+                  child: Text(choice.title),
+                );
+              }).toList();
+            },
+          ),
+          ],
       ),
       body: new StreamBuilder(
-          stream: Firestore.instance.collection('notes').snapshots(),
+          stream: _getDocuments(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const Text('Loading...');
             return new ListView.builder(
@@ -55,10 +81,20 @@ class _NotesPageState extends State<NotesPage> {
           }),
       floatingActionButton: new FloatingActionButton(
         onPressed:  () {_createNewNote();},
-        tooltip: 'Increment',
+        tooltip: 'New note',
         child: new Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  Stream<QuerySnapshot> _getDocuments() {
+    if (_noteStatus == 'active') {
+      return Firestore.instance.collection('notes').where('archived', isEqualTo: false).snapshots();
+    } else if (_noteStatus == 'archived') {
+      return Firestore.instance.collection('notes').where('archived', isEqualTo: true).snapshots();
+    } else {
+      return Firestore.instance.collection('notes').snapshots();
+    }
   }
 
   void _archiveOrDeleteNote(bool isArchived, DocumentSnapshot document) {
@@ -260,4 +296,58 @@ class _NotesPageState extends State<NotesPage> {
         return null;
     }
   }
+
+  Future<Null> _showNoteStatusSettings() async {
+    switch (await showDialog<NoteStatus>(
+      context: context,
+      builder: (BuildContext context) {
+        return new SimpleDialog(
+          title: const Text('Select Notes to view'),
+          children: <Widget>[
+            new SimpleDialogOption(
+              onPressed: () { Navigator.pop(context, NoteStatus.active); },
+              child: const Text('Active'),
+            ),
+            new SimpleDialogOption(
+              onPressed: () { Navigator.pop(context, NoteStatus.archived); },
+              child: const Text('Archived'),
+            ),
+            new SimpleDialogOption(
+              onPressed: () { Navigator.pop(context, NoteStatus.all); },
+              child: const Text('All'),
+            ),
+          ],
+        );
+      }
+    )) {
+      case NoteStatus.active:
+        setState(() {
+          _noteStatus = 'active';
+        });
+      break;
+      case NoteStatus.archived:
+        setState(() {
+          _noteStatus = 'archived';
+        });
+      break;
+      case NoteStatus.all:
+        setState(() {
+          _noteStatus = 'all';
+        });
+      break;
+    }
+  }
+
 }
+
+class Choice {
+  const Choice({this.title, this.icon});
+
+  final String title;
+  final IconData icon;
+}
+
+const List<Choice> choices =  <Choice>[
+  const Choice(title: 'Settings', icon: Icons.directions_car)
+];
+
