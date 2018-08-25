@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+
 
 enum EditNoteActions {
   cancel, save
@@ -28,7 +31,6 @@ class _NotesPageState extends State<NotesPage> {
   final textController = TextEditingController();
   final addNoteTitleController = TextEditingController();
   final addNoteTextController = TextEditingController();
-  Choice _selectedChoice = choices[0]; // The app's "state".
   String _noteStatus  = 'all';
 
   void _select(Choice choice) {
@@ -74,7 +76,7 @@ class _NotesPageState extends State<NotesPage> {
             return new ListView.builder(
               itemCount: snapshot.data.documents.length,
               padding: const EdgeInsets.only(top: 10.0),
-              itemExtent: 135.0,
+              itemExtent: null,
               itemBuilder: (context, index) =>
                   _buildListItem(context, snapshot.data.documents[index]),
             );
@@ -168,11 +170,15 @@ class _NotesPageState extends State<NotesPage> {
       }
     )) {
       case AddNoteActions.add:
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
         Firestore.instance.collection('notes').document()
           .setData({
             'title': addNoteTitleController.text,
             'text': addNoteTextController.text,
             'archived': false,
+            'creator': prefs.getString('username'),
+            'created': new DateTime.now().millisecondsSinceEpoch,
           });        
       break;
       case AddNoteActions.cancel:
@@ -253,36 +259,64 @@ class _NotesPageState extends State<NotesPage> {
     return new ListTile(
       key: new ValueKey(document.documentID),
       title: new Card(
-        child: new Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            new ListTile(
-              leading: const Icon(Icons.note),
-              title: new Text(document['title'].toString()),
-              subtitle: new Text(document['text'].toString()),
-            ),
-            new ButtonTheme.bar(
-              // make buttons use the appropriate styles for cards
-              child: new ButtonBar(
-                children: <Widget>[
-                  _getActivateOrNullButton(document),
-                  new FlatButton(
-                    child: Text(document['archived'] ? 'DELETE' : 'ARCHIVE'),
-                    textColor:document['archived'] ? Colors.redAccent : Colors.green,
-                    onPressed: () {_archiveOrDeleteNote(document['archived'], document);},
+           
+            elevation: 6.0,
+            child: new Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                new Padding(
+                    padding: EdgeInsets.only(left: 10.0, top: 10.0, bottom: 2.0),
+                    child: new Text(document['title'].toString(),
+                            textAlign: TextAlign.left,
+                            style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  new FlatButton(
-                    child: const Text('EDIT'),
-                    onPressed: () {_editNote(document);},
+                new Padding(
+                  padding: EdgeInsets.only(left: 10.0, bottom: 6.0),
+                  child: new Text(document['text'].toString(),
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 18.0),
                   ),
-                ],
-                alignment: MainAxisAlignment.spaceAround,
-              ),
-            ),
-          ],
-        ),
+                ),
+                new Padding(
+                  padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+                  child: new Text(document['creator'].toString() + " @ " + _getFormattedcreatedDate(int.parse(document['created'].toString())),
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 14.0, fontStyle: FontStyle.italic),
+                  ),
+                ),
+                new ButtonTheme.bar(
+                  // make buttons use the appropriate styles for cards
+                  child: new ButtonBar(
+                    alignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      _getActivateOrNullButton(document),
+                      new FlatButton(
+                        child: Text(document['archived'] ? 'DELETE' : 'ARCHIVE'),
+                        textColor:document['archived'] ? Colors.redAccent : Colors.green,
+                        onPressed: () {_archiveOrDeleteNote(document['archived'], document);},
+                      ),
+                      new FlatButton(
+                        child: const Text('EDIT'),
+                        onPressed: () {_editNote(document);},
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+          ),
       ),
+      
     );
+  }
+
+  String _getFormattedcreatedDate(int timestamp) {
+    var date = new DateTime.fromMillisecondsSinceEpoch(timestamp);
+    var dateFormat = new DateFormat('dd.MM.yyyy HH:mm');
+     var time = dateFormat.format(date);
+    return time;
+
   }
 
   Widget _getActivateOrNullButton (DocumentSnapshot document) {
