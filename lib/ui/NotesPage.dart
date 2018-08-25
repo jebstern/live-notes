@@ -19,7 +19,7 @@ class NotesPage extends StatefulWidget {
 }
 
 class _NotesPageState extends State<NotesPage> {
-  int _counter = 0;
+
   final titleController = TextEditingController();
   final textController = TextEditingController();
   final addNoteTitleController = TextEditingController();
@@ -33,12 +33,6 @@ class _NotesPageState extends State<NotesPage> {
     addNoteTitleController.dispose();
     addNoteTextController.dispose();  
     super.dispose();
-  }
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
   }
 
   @override
@@ -77,10 +71,16 @@ class _NotesPageState extends State<NotesPage> {
     });
   }
 
+  void _activateNote(DocumentSnapshot document) {
+    Firestore.instance.runTransaction((transaction) async {
+      await transaction.update(document.reference, {'archived': false});
+    });
+  }
+
   Future<Null> _createNewNote() async {
 
-    addNoteTitleController.text = 'title';
-    addNoteTextController.text = 'text';
+    addNoteTitleController.text = '';
+    addNoteTextController.text = '';
 
     switch (await showDialog<AddNoteActions>(
       context: context,
@@ -107,8 +107,10 @@ class _NotesPageState extends State<NotesPage> {
                 decoration: InputDecoration(
                   labelText: 'Text'
                 ),
-                maxLines: 4,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
                 maxLength: 300,
+                maxLengthEnforced: true,
               ),
             ),
             new ButtonBar(
@@ -143,7 +145,7 @@ class _NotesPageState extends State<NotesPage> {
     }
   }
 
-  Future<Null> _askedToLead(DocumentSnapshot document) async {
+  Future<Null> _editNote(DocumentSnapshot document) async {
 
     titleController.text = document['title'];
     textController.text = document['text'];
@@ -173,7 +175,8 @@ class _NotesPageState extends State<NotesPage> {
                 decoration: InputDecoration(
                   labelText: 'Text'
                 ),
-                maxLines: 4,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
                 maxLength: 300,
               ),
             ),
@@ -226,6 +229,7 @@ class _NotesPageState extends State<NotesPage> {
               // make buttons use the appropriate styles for cards
               child: new ButtonBar(
                 children: <Widget>[
+                  _getActivateOrNullButton(document),
                   new FlatButton(
                     child: Text(document['archived'] ? 'DELETE' : 'ARCHIVE'),
                     textColor:document['archived'] ? Colors.redAccent : Colors.green,
@@ -233,20 +237,27 @@ class _NotesPageState extends State<NotesPage> {
                   ),
                   new FlatButton(
                     child: const Text('EDIT'),
-                    onPressed: () {_askedToLead(document);},
+                    onPressed: () {_editNote(document);},
                   ),
                 ],
+                alignment: MainAxisAlignment.spaceAround,
               ),
             ),
           ],
         ),
       ),
-      /*
-      onTap: () => Firestore.instance.runTransaction((transaction) async {
-            DocumentSnapshot freshSnap = await transaction.get(document.reference);
-            await transaction.update(freshSnap.reference, {'votes': freshSnap['votes'] + 1});
-          }),
-          */
     );
+  }
+
+  Widget _getActivateOrNullButton (DocumentSnapshot document) {
+    if (document['archived']) {
+      return  new FlatButton(
+          child: Text('ACTIVATE'),
+          textColor: Colors.blue,
+          onPressed: () {_activateNote(document);},
+        );
+    } else {
+        return null;
+    }
   }
 }
