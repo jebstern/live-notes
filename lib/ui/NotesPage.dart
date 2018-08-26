@@ -340,15 +340,24 @@ class _NotesPageState extends State<NotesPage> {
           children: <Widget>[
             new SimpleDialogOption(
               onPressed: () { Navigator.pop(context, NoteStatus.active); },
-              child: const Text('Active'),
+              child: const Text(
+                  'Active',
+                  style: TextStyle(fontSize: 18.0),
+                ),
             ),
             new SimpleDialogOption(
               onPressed: () { Navigator.pop(context, NoteStatus.archived); },
-              child: const Text('Archived'),
+              child: const Text(
+                  'Archived',
+                  style: TextStyle(fontSize: 18.0),
+                ),
             ),
             new SimpleDialogOption(
               onPressed: () { Navigator.pop(context, NoteStatus.all); },
-              child: const Text('All'),
+              child: const Text(
+                  'All',
+                  style: TextStyle(fontSize: 18.0),
+                ),
             ),
           ],
         );
