@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:live_notes/ui/LoginPage.dart';
 import 'package:live_notes/ui/NotesPage.dart';
-import 'package:live_notes/ui/SplashPage.dart';
 
 void main() => runApp(new MyApp());
 
@@ -13,8 +12,9 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: new ThemeData(
         primarySwatch: Colors.blue,
+        fontFamily: 'Montserrat',
       ),
-      home: new SplashPage(),
+      home: new LoginPage(),
       routes: <String, WidgetBuilder>{
         '/LoginPage': (BuildContext context) => new LoginPage(),
         '/NotesPage': (BuildContext context) => new NotesPage()
@@ -22,6 +22,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -55,7 +55,6 @@ class _NotesPageState extends State<NotesPage> {
       appBar: new AppBar(
         title: new Text('Live Notes'),
         actions: <Widget>[
-          // overflow menu
           PopupMenuButton<Choice>(
             onSelected: _select,
             itemBuilder: (BuildContext context) {
@@ -72,7 +71,16 @@ class _NotesPageState extends State<NotesPage> {
       body: new StreamBuilder(
           stream: _getDocuments(),
           builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Text('Loading...');
+            if (!snapshot.hasData) {
+              return new Center(
+                child: new Container(
+                  child: new Text(
+                    'Loading ...',
+                    style: TextStyle(fontSize: 28.0, fontStyle: FontStyle.italic),
+                    ),
+                ),
+              );
+            }
             return new ListView.builder(
               itemCount: snapshot.data.documents.length,
               padding: const EdgeInsets.only(top: 10.0),
@@ -85,7 +93,7 @@ class _NotesPageState extends State<NotesPage> {
         onPressed:  () {_createNewNote();},
         tooltip: 'New note',
         child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 
@@ -336,7 +344,7 @@ class _NotesPageState extends State<NotesPage> {
       context: context,
       builder: (BuildContext context) {
         return new SimpleDialog(
-          title: const Text('Select Notes to view'),
+          title: Text('Select Notes to view', style: TextStyle(fontWeight: FontWeight.bold),),
           children: <Widget>[
             new SimpleDialogOption(
               onPressed: () { Navigator.pop(context, NoteStatus.active); },
