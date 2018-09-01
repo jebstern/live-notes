@@ -33,9 +33,15 @@ class _NotesPageState extends State<NotesPage> {
   final addNoteTextController = TextEditingController();
   String _noteStatus  = 'all';
 
-  void _select(Choice choice) {
+  Future _select(Choice choice) async {
     if (choice.title == 'Settings') {
       _showNoteStatusSettings();
+    }
+    if (choice.title == 'Sign out') {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('userEmail', '');
+      prefs.setString('userId', '');
+      Navigator.of(context).pushReplacementNamed('/LoginPage');
     }
   }
 
@@ -185,7 +191,8 @@ class _NotesPageState extends State<NotesPage> {
             'title': addNoteTitleController.text,
             'text': addNoteTextController.text,
             'archived': false,
-            'creator': prefs.getString('username'),
+            'creator': prefs.getString('userEmail'),
+            'creatorUid': prefs.getString('userId'),
             'created': new DateTime.now().millisecondsSinceEpoch,
           });        
       break;
@@ -249,11 +256,14 @@ class _NotesPageState extends State<NotesPage> {
       }
     )) {
       case EditNoteActions.save:
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
         Firestore.instance.runTransaction((transaction) async {
-          await transaction.update(document.reference, 
-          {
+          await transaction.update(document.reference, {
             'title': titleController.text,
-            'text': textController.text
+            'text': textController.text,
+            'editorEmail': prefs.getString('userEmail'),
+            'editorUid': prefs.getString('userId'),
           });
         });
       break;
@@ -399,6 +409,7 @@ class Choice {
 }
 
 const List<Choice> choices =  <Choice>[
-  const Choice(title: 'Settings', icon: Icons.directions_car)
+  const Choice(title: 'Settings', icon: Icons.directions_car),
+  const Choice(title: 'Sign out', icon: Icons.directions_car),
 ];
 
