@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
@@ -45,6 +46,7 @@ class _NotesPageState extends State<NotesPage> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('userEmail', '');
       prefs.setString('userId', '');
+      await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushReplacementNamed('/LoginRegisterPage');
     }
   }
