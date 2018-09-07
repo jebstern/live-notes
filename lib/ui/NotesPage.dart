@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 
 enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
-
 enum NoteStatus { active, archived, all }
 
 class Choice {
@@ -24,7 +23,6 @@ const List<Choice> choices = <Choice>[
 
 class NotesPage extends StatefulWidget {
   NotesPage({Key key, this.title}) : super(key: key);
-
   final String title;
 
   @override
@@ -37,6 +35,7 @@ class _NotesPageState extends State<NotesPage> {
   final addNoteTitleController = TextEditingController();
   final addNoteTextController = TextEditingController();
   String _noteStatus = 'all';
+  String userEmail = '';
 
   Future _select(Choice choice) async {
     if (choice.title == 'Settings') {
@@ -49,6 +48,17 @@ class _NotesPageState extends State<NotesPage> {
       await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushReplacementNamed('/LoginRegisterPage');
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _getUser().then((result) {
+      setState(() {
+        userEmail = result;
+      });
+    });
   }
 
   @override
@@ -79,6 +89,7 @@ class _NotesPageState extends State<NotesPage> {
             },
           ),
         ],
+        automaticallyImplyLeading: false,
       ),
       body: new StreamBuilder(
           stream: _getDocuments(),
@@ -102,6 +113,39 @@ class _NotesPageState extends State<NotesPage> {
                   _buildListItem(context, snapshot.data.documents[index]),
             );
           }),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text(
+                this.userEmail,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+            ListTile(
+              title: Text('Item 1'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('Item 2'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
           _createNewNote();
@@ -110,6 +154,11 @@ class _NotesPageState extends State<NotesPage> {
         child: new Icon(Icons.add),
       ),
     );
+  }
+
+  Future<String> _getUser() async {
+    FirebaseUser firebaseUser = await FirebaseAuth.instance.currentUser();
+    return firebaseUser.email;
   }
 
   Stream<QuerySnapshot> _getDocuments() {
