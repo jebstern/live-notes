@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:live_notes/ui/LoginPage.dart';
+import 'package:live_notes/ui/LandingPage.dart';
+import 'package:live_notes/ui/LoginRegisterPage.dart';
 import 'package:live_notes/ui/NotesPage.dart';
 
 void main() => runApp(new MyApp());
@@ -14,9 +15,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         fontFamily: 'Montserrat',
       ),
-      home: new LoginPage(),
+      home: new LandingPage(),
       routes: <String, WidgetBuilder>{
-        '/LoginPage': (BuildContext context) => new LoginPage(),
+        '/LoginRegisterPage': (BuildContext context) => new LoginRegisterPage(),
         '/NotesPage': (BuildContext context) => new NotesPage()
       },
     );

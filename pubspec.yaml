@@ -20,6 +20,7 @@ flutter:
   assets:
     - assets/live_notes_logo.png
     - assets/logo.png
+    - assets/landing.jpeg
   fonts:
     - family: Montserrat
       fonts:
