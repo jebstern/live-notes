@@ -8,9 +8,10 @@ enum PageMode { login, register }
 
 class LoginRegisterPage extends StatefulWidget {
   static String tag = 'login-page';
-  PageMode pageMode;
+  final PageMode pageMode;
 
-  LoginRegisterPage({Key key, this.pageMode = PageMode.login}) : super(key: key);
+  LoginRegisterPage({Key key, this.pageMode = PageMode.login})
+      : super(key: key);
 
   @override
   _LoginRegisterPageState createState() => new _LoginRegisterPageState();
@@ -137,13 +138,18 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       return;
     }
 
+    _showDialogWithProgress('Loading', 'Logging in...');
+
     authHandler
         .handleSignInEmail(emailController.text, passwordController.text)
         .then((FirebaseUser user) {
       _saveUserDetails(user);
+      Navigator.of(context).pop();
       Navigator.of(context).pushReplacementNamed('/NotesPage');
-    }).catchError(
-            (e) => _showDialog('Login failed', 'Incorrect email or password.'));
+    }).catchError((e) {
+      Navigator.of(context).pop();
+      _showDialog('Login failed', 'Incorrect email or password.');
+    });
   }
 
   _register() {
@@ -162,12 +168,18 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       return;
     }
 
+    _showDialogWithProgress('Loading', 'Registering...');
+
     authHandler
         .handleSignUp(emailController.text, passwordController.text)
         .then((FirebaseUser user) {
+      Navigator.of(context).pop();
       _saveUserDetails(user);
       Navigator.of(context).pushReplacementNamed('/NotesPage');
-    }).catchError((e) => print(e));
+    }).catchError((e) {
+      Navigator.of(context).pop();
+      _showDialog('Registration failed', 'Please try again.');
+    });
   }
 
   _saveUserDetails(FirebaseUser user) async {
@@ -198,6 +210,32 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
               },
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<Null> _showDialogWithProgress(String title, String message) async {
+    return showDialog<Null>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return new AlertDialog(
+          title: new Text(title),
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              CircularProgressIndicator(
+                value: null,
+              ),
+              Padding(
+                child: new Text(
+                  message,
+                ),
+                padding: EdgeInsets.only(left: 18.0),
+              ),
+            ],
+          ),
         );
       },
     );
