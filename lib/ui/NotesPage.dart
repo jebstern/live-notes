@@ -92,7 +92,6 @@ class _NotesPageState extends State<NotesPage> {
             },
           ),
         ],
-        automaticallyImplyLeading: false,
       ),
       body: new StreamBuilder(
           stream: _getDocuments(),
