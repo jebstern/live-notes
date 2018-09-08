@@ -9,6 +9,7 @@ import 'ShareNotesPage.dart';
 enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
 enum NoteStatus { active, archived, all }
+enum CardMenu { activate, archive, delete, share }
 
 class Choice {
   const Choice({this.title, this.icon});
@@ -50,6 +51,16 @@ class _NotesPageState extends State<NotesPage> {
       prefs.setString('userId', '');
       await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushReplacementNamed('/LoginRegisterPage');
+    }
+  }
+
+  void _cardMenuItemSelected(CardMenu cardMenu, DocumentSnapshot document) {
+    if (cardMenu == CardMenu.archive) {
+      _archiveOrDeleteNote(document['archived'], document);
+    } else if (cardMenu == CardMenu.activate) {
+      _activateNote(document);
+    } else if (cardMenu == CardMenu.delete) {
+      _archiveOrDeleteNote(document['archived'], document);
     }
   }
 
@@ -376,24 +387,37 @@ class _NotesPageState extends State<NotesPage> {
                 style: TextStyle(fontSize: 14.0, fontStyle: FontStyle.italic),
               ),
             ),
+            _getCardArchivedText(document),
             new ButtonTheme.bar(
-              // make buttons use the appropriate styles for cards
               child: new ButtonBar(
-                alignment: MainAxisAlignment.spaceAround,
+                alignment: MainAxisAlignment.end,
                 children: <Widget>[
-                  _getActivateOrNullButton(document),
-                  new FlatButton(
-                    child: Text(document['archived'] ? 'DELETE' : 'ARCHIVE'),
-                    textColor:
-                        document['archived'] ? Colors.redAccent : Colors.green,
-                    onPressed: () {
-                      _archiveOrDeleteNote(document['archived'], document);
-                    },
-                  ),
                   new FlatButton(
                     child: const Text('EDIT'),
                     onPressed: () {
                       _editNote(document);
+                    },
+                  ),
+                  PopupMenuButton<CardMenu>(
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<CardMenu>>[
+                          document['archived']
+                              ? PopupMenuItem<CardMenu>(
+                                  value: CardMenu.delete,
+                                  child: Text('Delete'),
+                                )
+                              : PopupMenuItem<CardMenu>(
+                                  value: CardMenu.archive,
+                                  child: Text('Archive'),
+                                ),
+                          _getCardPopupMenuItem(document),
+                          const PopupMenuItem<CardMenu>(
+                            value: CardMenu.share,
+                            child: const Text('Share'),
+                          ),
+                        ],
+                    onSelected: (CardMenu result) {
+                      _cardMenuItemSelected(result, document);
                     },
                   ),
                 ],
@@ -405,6 +429,22 @@ class _NotesPageState extends State<NotesPage> {
     );
   }
 
+  Widget _getCardArchivedText(DocumentSnapshot document) {
+    if (document['archived']) {
+      return Padding(
+        padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+        child: new Text(
+          'Archived',
+          textAlign: TextAlign.left,
+          style: TextStyle(
+              fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.red),
+        ),
+      );
+    } else {
+      return Container();
+    }
+  }
+
   String _getFormattedcreatedDate(int timestamp) {
     var date = new DateTime.fromMillisecondsSinceEpoch(timestamp);
     var dateFormat = new DateFormat('dd.MM.yyyy HH:mm');
@@ -412,14 +452,11 @@ class _NotesPageState extends State<NotesPage> {
     return time;
   }
 
-  Widget _getActivateOrNullButton(DocumentSnapshot document) {
+  Widget _getCardPopupMenuItem(DocumentSnapshot document) {
     if (document['archived']) {
-      return new FlatButton(
-        child: Text('ACTIVATE'),
-        textColor: Colors.blue,
-        onPressed: () {
-          _activateNote(document);
-        },
+      return new PopupMenuItem<CardMenu>(
+        value: CardMenu.activate,
+        child: Text('Activate'),
       );
     } else {
       return null;
