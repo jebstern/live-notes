@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'ShareNotesPage.dart';
 
 enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
@@ -38,6 +39,7 @@ class _NotesPageState extends State<NotesPage> {
   NoteStatus _noteStatus = NoteStatus.all;
   String userEmail = '';
   String userId = '';
+  FirebaseUser firebaseUser;
 
   Future _select(Choice choice) async {
     if (choice.title == 'Settings') {
@@ -60,6 +62,7 @@ class _NotesPageState extends State<NotesPage> {
       setState(() {
         userEmail = firebaseUser.email;
         userId = firebaseUser.uid;
+        this.firebaseUser = firebaseUser;
       });
     });
   }
@@ -128,20 +131,15 @@ class _NotesPageState extends State<NotesPage> {
               ),
             ),
             ListTile(
-              title: Text('Item 1'),
+              title: Text('Share notes'),
               onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
                 Navigator.pop(context);
+                Navigator.push(context,MaterialPageRoute(builder: (context) => ShareNotesPage(firebaseUser: firebaseUser)));
               },
             ),
             ListTile(
               title: Text('Item 2'),
               onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
                 Navigator.pop(context);
               },
             ),
