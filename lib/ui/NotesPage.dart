@@ -20,7 +20,6 @@ class Choice {
 
 const List<Choice> choices = <Choice>[
   const Choice(title: 'Settings', icon: Icons.directions_car),
-  const Choice(title: 'Sign out', icon: Icons.directions_car),
 ];
 
 class NotesPage extends StatefulWidget {
@@ -44,13 +43,6 @@ class _NotesPageState extends State<NotesPage> {
   Future _select(Choice choice) async {
     if (choice.title == 'Settings') {
       _showNoteStatusSettings();
-    }
-    if (choice.title == 'Sign out') {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('userEmail', '');
-      prefs.setString('userId', '');
-      await FirebaseAuth.instance.signOut();
-      Navigator.of(context).pushReplacementNamed('/LoginRegisterPage');
     }
   }
 
@@ -152,9 +144,9 @@ class _NotesPageState extends State<NotesPage> {
               },
             ),
             ListTile(
-              title: Text('Item 2'),
+              title: Text('Sign out'),
               onTap: () {
-                Navigator.pop(context);
+                _signOut();
               },
             ),
           ],
@@ -168,6 +160,14 @@ class _NotesPageState extends State<NotesPage> {
         child: new Icon(Icons.add),
       ),
     );
+  }
+
+  Future _signOut() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('userEmail', '');
+    prefs.setString('userId', '');
+    await FirebaseAuth.instance.signOut();
+    Navigator.of(context).pushReplacementNamed('/LoginRegisterPage');
   }
 
   Future<FirebaseUser> _getUser() async {
