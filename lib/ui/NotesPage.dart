@@ -36,6 +36,7 @@ class _NotesPageState extends State<NotesPage> {
   final addNoteTextController = TextEditingController();
   String _noteStatus = 'all';
   String userEmail = '';
+  String userId = '';
 
   Future _select(Choice choice) async {
     if (choice.title == 'Settings') {
@@ -54,9 +55,10 @@ class _NotesPageState extends State<NotesPage> {
   void initState() {
     super.initState();
 
-    _getUser().then((result) {
+    _getUser().then((firebaseUser) {
       setState(() {
-        userEmail = result;
+        userEmail = firebaseUser.email;
+        userId = firebaseUser.uid;
       });
     });
   }
@@ -156,9 +158,9 @@ class _NotesPageState extends State<NotesPage> {
     );
   }
 
-  Future<String> _getUser() async {
+  Future<FirebaseUser> _getUser() async {
     FirebaseUser firebaseUser = await FirebaseAuth.instance.currentUser();
-    return firebaseUser.email;
+    return firebaseUser;
   }
 
   Stream<QuerySnapshot> _getDocuments() {
@@ -166,14 +168,16 @@ class _NotesPageState extends State<NotesPage> {
       return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: false)
+          .where('creatorUid', isEqualTo: userId)
           .snapshots();
     } else if (_noteStatus == 'archived') {
       return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: true)
+          .where('creatorUid', isEqualTo: userId)
           .snapshots();
     } else {
-      return Firestore.instance.collection('notes').snapshots();
+      return Firestore.instance.collection('notes').where('creatorUid', isEqualTo: userId).snapshots();
     }
   }
 
