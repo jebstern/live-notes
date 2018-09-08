@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
@@ -34,7 +35,7 @@ class _NotesPageState extends State<NotesPage> {
   final textController = TextEditingController();
   final addNoteTitleController = TextEditingController();
   final addNoteTextController = TextEditingController();
-  String _noteStatus = 'all';
+  NoteStatus _noteStatus = NoteStatus.all;
   String userEmail = '';
   String userId = '';
 
@@ -164,20 +165,23 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   Stream<QuerySnapshot> _getDocuments() {
-    if (_noteStatus == 'active') {
+    if (_noteStatus == NoteStatus.active) {
       return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: false)
           .where('creatorUid', isEqualTo: userId)
           .snapshots();
-    } else if (_noteStatus == 'archived') {
+    } else if (_noteStatus == NoteStatus.archived) {
       return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: true)
           .where('creatorUid', isEqualTo: userId)
           .snapshots();
     } else {
-      return Firestore.instance.collection('notes').where('creatorUid', isEqualTo: userId).snapshots();
+      return Firestore.instance
+          .collection('notes')
+          .where('creatorUid', isEqualTo: userId)
+          .snapshots();
     }
   }
 
@@ -436,27 +440,51 @@ class _NotesPageState extends State<NotesPage> {
                 onPressed: () {
                   Navigator.pop(context, NoteStatus.active);
                 },
-                child: const Text(
-                  'Active',
-                  style: TextStyle(fontSize: 18.0),
+                child: Row(
+                  children: <Widget>[
+                    _getNoteStatusIcon(NoteStatus.active),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        'Active',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               new SimpleDialogOption(
                 onPressed: () {
                   Navigator.pop(context, NoteStatus.archived);
                 },
-                child: const Text(
-                  'Archived',
-                  style: TextStyle(fontSize: 18.0),
+                child: Row(
+                  children: <Widget>[
+                    _getNoteStatusIcon(NoteStatus.archived),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        'Archived',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               new SimpleDialogOption(
                 onPressed: () {
                   Navigator.pop(context, NoteStatus.all);
                 },
-                child: const Text(
-                  'All',
-                  style: TextStyle(fontSize: 18.0),
+                child: Row(
+                  children: <Widget>[
+                    _getNoteStatusIcon(NoteStatus.all),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        'All',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -464,19 +492,28 @@ class _NotesPageState extends State<NotesPage> {
         })) {
       case NoteStatus.active:
         setState(() {
-          _noteStatus = 'active';
+          _noteStatus = NoteStatus.active;
         });
         break;
       case NoteStatus.archived:
         setState(() {
-          _noteStatus = 'archived';
+          _noteStatus = NoteStatus.archived;
         });
         break;
       case NoteStatus.all:
         setState(() {
-          _noteStatus = 'all';
+          _noteStatus = NoteStatus.all;
         });
         break;
     }
   }
+
+  Widget _getNoteStatusIcon(NoteStatus noteStatus) {
+    if (noteStatus == _noteStatus) {
+      return Icon(FontAwesomeIcons.checkCircle, size: 16.0,);
+    } else {
+      return Icon(FontAwesomeIcons.circle, size: 16.0,);
+    }
+  }
+
 }
