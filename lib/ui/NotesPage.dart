@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'ShareNotesPage.dart';
 
 enum EditNoteActions { cancel, save }
@@ -134,7 +133,11 @@ class _NotesPageState extends State<NotesPage> {
               title: Text('Share notes'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context,MaterialPageRoute(builder: (context) => ShareNotesPage(firebaseUser: firebaseUser)));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ShareNotesPage(firebaseUser: firebaseUser)));
               },
             ),
             ListTile(
@@ -440,12 +443,9 @@ class _NotesPageState extends State<NotesPage> {
                 child: Row(
                   children: <Widget>[
                     _getNoteStatusIcon(NoteStatus.active),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        'Active',
-                        style: TextStyle(fontSize: 18.0),
-                      ),
+                    Text(
+                      'Active',
+                      style: TextStyle(fontSize: 18.0),
                     ),
                   ],
                 ),
@@ -457,12 +457,9 @@ class _NotesPageState extends State<NotesPage> {
                 child: Row(
                   children: <Widget>[
                     _getNoteStatusIcon(NoteStatus.archived),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        'Archived',
-                        style: TextStyle(fontSize: 18.0),
-                      ),
+                    Text(
+                      'Archived',
+                      style: TextStyle(fontSize: 18.0),
                     ),
                   ],
                 ),
@@ -474,12 +471,9 @@ class _NotesPageState extends State<NotesPage> {
                 child: Row(
                   children: <Widget>[
                     _getNoteStatusIcon(NoteStatus.all),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        'All',
-                        style: TextStyle(fontSize: 18.0),
-                      ),
+                    Text(
+                      'All',
+                      style: TextStyle(fontSize: 18.0),
                     ),
                   ],
                 ),
@@ -506,11 +500,10 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   Widget _getNoteStatusIcon(NoteStatus noteStatus) {
-    if (noteStatus == _noteStatus) {
-      return Icon(FontAwesomeIcons.checkCircle, size: 16.0,);
-    } else {
-      return Icon(FontAwesomeIcons.circle, size: 16.0,);
-    }
+    return Radio(
+      value: noteStatus.toString(),
+      groupValue: _noteStatus.toString(),
+      onChanged: (String value) {},
+    );
   }
-
 }
