@@ -10,17 +10,7 @@ enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
 enum NoteStatus { active, archived, all }
 enum CardMenu { activate, archive, delete, share }
-
-class Choice {
-  const Choice({this.title, this.icon});
-
-  final String title;
-  final IconData icon;
-}
-
-const List<Choice> choices = <Choice>[
-  const Choice(title: 'Settings', icon: Icons.directions_car),
-];
+enum AppBarMenu { settings }
 
 class NotesPage extends StatefulWidget {
   NotesPage({Key key, this.title}) : super(key: key);
@@ -40,8 +30,8 @@ class _NotesPageState extends State<NotesPage> {
   String userId = '';
   FirebaseUser firebaseUser;
 
-  Future _select(Choice choice) async {
-    if (choice.title == 'Settings') {
+  void _appBarMenuItemSelected(AppBarMenu appBarMenu) {
+    if (appBarMenu == AppBarMenu.settings) {
       _showNoteStatusSettings();
     }
   }
@@ -85,15 +75,15 @@ class _NotesPageState extends State<NotesPage> {
       appBar: new AppBar(
         title: new Text('Live Notes'),
         actions: <Widget>[
-          PopupMenuButton<Choice>(
-            onSelected: _select,
-            itemBuilder: (BuildContext context) {
-              return choices.map((Choice choice) {
-                return PopupMenuItem<Choice>(
-                  value: choice,
-                  child: Text(choice.title),
-                );
-              }).toList();
+          PopupMenuButton<AppBarMenu>(
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<AppBarMenu>>[
+                  PopupMenuItem<AppBarMenu>(
+                    value: AppBarMenu.settings,
+                    child: Text('Settings'),
+                  ),
+                ],
+            onSelected: (AppBarMenu result) {
+              _appBarMenuItemSelected(result);
             },
           ),
         ],
@@ -411,9 +401,9 @@ class _NotesPageState extends State<NotesPage> {
                                   child: Text('Archive'),
                                 ),
                           _getCardPopupMenuItem(document),
-                          const PopupMenuItem<CardMenu>(
+                          PopupMenuItem<CardMenu>(
                             value: CardMenu.share,
-                            child: const Text('Share'),
+                            child: Text('Share'),
                           ),
                         ],
                     onSelected: (CardMenu result) {
