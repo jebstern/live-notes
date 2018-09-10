@@ -1,11 +1,15 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ShareNotesPage extends StatelessWidget {
   final FirebaseUser firebaseUser;
+  final DocumentReference documentReference;
   final TextEditingController emailController = new TextEditingController();
 
-  ShareNotesPage({Key key, @required this.firebaseUser}) : super(key: key);
+  ShareNotesPage({Key key, @required this.firebaseUser, @required this.documentReference}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -52,20 +56,50 @@ class ShareNotesPage extends StatelessWidget {
                   padding:
                       EdgeInsets.symmetric(vertical: 8.0, horizontal: 18.0),
                   onPressed: () {
-                    _shareNotes();
+                    _shareNotes(context);
                   },
                   shape: new RoundedRectangleBorder(
                       borderRadius: new BorderRadius.circular(30.0))),
             ),
-            SizedBox(
-              height: 20.0,
-            ),
-            Text('Result'),
           ],
         ),
       ),
     );
   }
 
-  void _shareNotes() {}
+  void _shareNotes(BuildContext context) {
+    Firestore.instance.runTransaction((transaction) async {
+      await transaction.update(documentReference, {'shareTo': emailController.text});
+      _showShareNoteResultDialog(context);
+    });
+  }
+
+  Future<Null> _showShareNoteResultDialog(BuildContext context) async {
+    return showDialog<Null>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return new AlertDialog(
+          title: new Text('Note shared'),
+          content: new SingleChildScrollView(
+            child: new ListBody(
+              children: <Widget>[
+                new Text('You have succesfully shared your note.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }

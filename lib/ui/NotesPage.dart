@@ -43,6 +43,9 @@ class _NotesPageState extends State<NotesPage> {
       _activateNote(document);
     } else if (cardMenu == CardMenu.delete) {
       _archiveOrDeleteNote(document['archived'], document);
+    } else if (cardMenu == CardMenu.share) {
+      Navigator.push(context,MaterialPageRoute(builder: (context) =>
+        ShareNotesPage(firebaseUser: firebaseUser, documentReference: document.reference)));
     }
   }
 
