@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rxdart/rxdart.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -26,8 +27,6 @@ class _NotesPageState extends State<NotesPage> {
   final addNoteTitleController = TextEditingController();
   final addNoteTextController = TextEditingController();
   NoteStatus _noteStatus = NoteStatus.all;
-  String userEmail = '';
-  String userId = '';
   FirebaseUser firebaseUser;
 
   void _appBarMenuItemSelected(AppBarMenu appBarMenu) {
@@ -44,8 +43,12 @@ class _NotesPageState extends State<NotesPage> {
     } else if (cardMenu == CardMenu.delete) {
       _archiveOrDeleteNote(document['archived'], document);
     } else if (cardMenu == CardMenu.share) {
-      Navigator.push(context,MaterialPageRoute(builder: (context) =>
-        ShareNotesPage(firebaseUser: firebaseUser, documentReference: document.reference)));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ShareNotesPage(
+                  firebaseUser: firebaseUser,
+                  documentReference: document.reference)));
     }
   }
 
@@ -55,8 +58,6 @@ class _NotesPageState extends State<NotesPage> {
 
     _getUser().then((firebaseUser) {
       setState(() {
-        userEmail = firebaseUser.email;
-        userId = firebaseUser.uid;
         this.firebaseUser = firebaseUser;
       });
     });
@@ -91,50 +92,39 @@ class _NotesPageState extends State<NotesPage> {
           ),
         ],
       ),
-      body: new StreamBuilder(
-          stream: _getDocuments(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return new Center(
-                child: new Container(
-                  child: new Text(
-                    'Loading ...',
-                    style:
-                        TextStyle(fontSize: 28.0, fontStyle: FontStyle.italic),
-                  ),
+      body: new StreamBuilder<QuerySnapshot>(
+        stream: _getDocuments(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return new Center(
+              child: new Container(
+                child: new Text(
+                  'Loading ...',
+                  style: TextStyle(fontSize: 28.0, fontStyle: FontStyle.italic),
                 ),
-              );
-            }
-            return new ListView.builder(
-              itemCount: snapshot.data.documents.length,
-              padding: const EdgeInsets.only(top: 10.0),
-              itemExtent: null,
-              itemBuilder: (context, index) =>
-                  _buildListItem(context, snapshot.data.documents[index]),
+              ),
             );
-          }),
+          }
+          return new ListView.builder(
+            itemCount: snapshot.data.documents.length,
+            padding: const EdgeInsets.only(top: 10.0),
+            itemExtent: null,
+            itemBuilder: (context, index) =>
+                _buildListItem(context, snapshot.data.documents[index]),
+          );
+        },
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
               child: Text(
-                this.userEmail,
+                this.firebaseUser.email,
               ),
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
-            ),
-            ListTile(
-              title: Text('Share notes'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            ShareNotesPage(firebaseUser: firebaseUser)));
-              },
             ),
             ListTile(
               title: Text('Sign out'),
@@ -169,24 +159,38 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   Stream<QuerySnapshot> _getDocuments() {
+    Stream<QuerySnapshot> ownNotesStream;
+
     if (_noteStatus == NoteStatus.active) {
-      return Firestore.instance
+      ownNotesStream = Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: false)
-          .where('creatorUid', isEqualTo: userId)
+          .where('creatorUid', isEqualTo: firebaseUser.uid)
+          .orderBy('created', descending: true)
           .snapshots();
     } else if (_noteStatus == NoteStatus.archived) {
-      return Firestore.instance
+      ownNotesStream = Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: true)
-          .where('creatorUid', isEqualTo: userId)
+          .where('creatorUid', isEqualTo: firebaseUser.uid)
+          .orderBy('created', descending: true)
           .snapshots();
     } else {
-      return Firestore.instance
+      ownNotesStream = Firestore.instance
           .collection('notes')
-          .where('creatorUid', isEqualTo: userId)
+          .where('creatorUid', isEqualTo: firebaseUser.uid)
+          .orderBy('created', descending: true)
           .snapshots();
     }
+    Stream<QuerySnapshot> sharedNotesStream = Firestore.instance
+        .collection('notes')
+        .where('shareTo', isEqualTo: firebaseUser.email)
+        .snapshots();
+    return Observable.combineLatest2(ownNotesStream, sharedNotesStream,
+        (QuerySnapshot a, QuerySnapshot b) {
+      a.documents.addAll(b.documents.toList());
+      return a;
+    });
   }
 
   void _archiveOrDeleteNote(bool isArchived, DocumentSnapshot document) {
