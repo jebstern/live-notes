@@ -385,6 +385,7 @@ class _NotesPageState extends State<NotesPage> {
               ),
             ),
             _getCardArchivedText(document),
+            _getCardSharedText(document),
             new ButtonTheme.bar(
               child: new ButtonBar(
                 alignment: MainAxisAlignment.end,
@@ -447,6 +448,22 @@ class _NotesPageState extends State<NotesPage> {
     var dateFormat = new DateFormat('dd.MM.yyyy HH:mm');
     var time = dateFormat.format(date);
     return time;
+  }
+
+  Widget _getCardSharedText(DocumentSnapshot document) {
+    if (document['shareTo'] != null) {
+      return Padding(
+        padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+        child: new Text(
+          document['shareTo'] == firebaseUser.email? 'Shared with you':'Sharing',
+          textAlign: TextAlign.left,
+          style: TextStyle(
+              fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.red),
+        ),
+      );
+    } else {
+      return Container();
+    }
   }
 
   Widget _getCardPopupMenuItem(DocumentSnapshot document) {
