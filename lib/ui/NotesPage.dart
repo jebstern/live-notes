@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:live_notes/ui/EditNotePage.dart';
 import 'package:rxdart/rxdart.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +10,7 @@ import 'ShareNotesPage.dart';
 
 enum EditNoteActions { cancel, save }
 enum AddNoteActions { cancel, add }
-enum NoteStatus { active, archived, all }
+enum NoteStatus { active, archived, shared, all }
 enum CardMenu { activate, archive, delete, share }
 enum AppBarMenu { settings }
 
@@ -162,17 +163,23 @@ class _NotesPageState extends State<NotesPage> {
     Stream<QuerySnapshot> ownNotesStream;
 
     if (_noteStatus == NoteStatus.active) {
-      ownNotesStream = Firestore.instance
+      return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: false)
           .where('creatorUid', isEqualTo: firebaseUser.uid)
           .orderBy('created', descending: true)
           .snapshots();
     } else if (_noteStatus == NoteStatus.archived) {
-      ownNotesStream = Firestore.instance
+      return Firestore.instance
           .collection('notes')
           .where('archived', isEqualTo: true)
           .where('creatorUid', isEqualTo: firebaseUser.uid)
+          .orderBy('created', descending: true)
+          .snapshots();
+    } else if (_noteStatus == NoteStatus.shared) {
+      return Firestore.instance
+          .collection('notes')
+          .where('shareTo', isEqualTo: firebaseUser.email)
           .orderBy('created', descending: true)
           .snapshots();
     } else {
@@ -181,16 +188,17 @@ class _NotesPageState extends State<NotesPage> {
           .where('creatorUid', isEqualTo: firebaseUser.uid)
           .orderBy('created', descending: true)
           .snapshots();
+
+      Stream<QuerySnapshot> sharedNotesStream = Firestore.instance
+          .collection('notes')
+          .where('shareTo', isEqualTo: firebaseUser.email)
+          .snapshots();
+      return Observable.combineLatest2(ownNotesStream, sharedNotesStream,
+          (QuerySnapshot a, QuerySnapshot b) {
+        a.documents.addAll(b.documents.toList());
+        return a;
+      });
     }
-    Stream<QuerySnapshot> sharedNotesStream = Firestore.instance
-        .collection('notes')
-        .where('shareTo', isEqualTo: firebaseUser.email)
-        .snapshots();
-    return Observable.combineLatest2(ownNotesStream, sharedNotesStream,
-        (QuerySnapshot a, QuerySnapshot b) {
-      a.documents.addAll(b.documents.toList());
-      return a;
-    });
   }
 
   void _archiveOrDeleteNote(bool isArchived, DocumentSnapshot document) {
@@ -359,27 +367,16 @@ class _NotesPageState extends State<NotesPage> {
           children: <Widget>[
             new Padding(
               padding: EdgeInsets.only(left: 10.0, top: 10.0, bottom: 2.0),
-              child: new Text(
-                document['title'].toString(),
-                textAlign: TextAlign.left,
-                style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+              child: ListTile(
+                title: Text(document['title'].toString()),
+                subtitle: Text(document['text'].toString()),
               ),
             ),
             new Padding(
-              padding: EdgeInsets.only(left: 10.0, bottom: 6.0),
+              padding: EdgeInsets.only(left: 26.0, top: 10.0, bottom: 10.0),
               child: new Text(
-                document['text'].toString(),
-                textAlign: TextAlign.left,
-                style: TextStyle(fontSize: 18.0),
-              ),
-            ),
-            new Padding(
-              padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
-              child: new Text(
-                document['creator'].toString() +
-                    " @ " +
-                    _getFormattedcreatedDate(
-                        int.parse(document['created'].toString())),
+                _getFormattedcreatedDate(
+                    int.parse(document['created'].toString())),
                 textAlign: TextAlign.left,
                 style: TextStyle(fontSize: 14.0, fontStyle: FontStyle.italic),
               ),
@@ -393,31 +390,18 @@ class _NotesPageState extends State<NotesPage> {
                   new FlatButton(
                     child: const Text('EDIT'),
                     onPressed: () {
-                      _editNote(document);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditNotePage(
+                            firebaseUser: firebaseUser,
+                            documentSnapshot: document,
+                          )
+                        )
+                      );
                     },
                   ),
-                  PopupMenuButton<CardMenu>(
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<CardMenu>>[
-                          document['archived']
-                              ? PopupMenuItem<CardMenu>(
-                                  value: CardMenu.delete,
-                                  child: Text('Delete'),
-                                )
-                              : PopupMenuItem<CardMenu>(
-                                  value: CardMenu.archive,
-                                  child: Text('Archive'),
-                                ),
-                          _getCardPopupMenuItem(document),
-                          PopupMenuItem<CardMenu>(
-                            value: CardMenu.share,
-                            child: Text('Share'),
-                          ),
-                        ],
-                    onSelected: (CardMenu result) {
-                      _cardMenuItemSelected(result, document);
-                    },
-                  ),
+                  _getPopupMenuOrEmpty(document),
                 ],
               ),
             ),
@@ -427,10 +411,42 @@ class _NotesPageState extends State<NotesPage> {
     );
   }
 
+  Widget _getPopupMenuOrEmpty(DocumentSnapshot document) {
+    if (_isOwnerOfNote(document)) {
+      return PopupMenuButton<CardMenu>(
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<CardMenu>>[
+              document['archived']
+                  ? PopupMenuItem<CardMenu>(
+                      value: CardMenu.delete,
+                      child: Text('Delete'),
+                    )
+                  : PopupMenuItem<CardMenu>(
+                      value: CardMenu.archive,
+                      child: Text('Archive'),
+                    ),
+              _getCardPopupMenuItem(document),
+              PopupMenuItem<CardMenu>(
+                value: CardMenu.share,
+                child: Text('Share'),
+              ),
+            ],
+        onSelected: (CardMenu result) {
+          _cardMenuItemSelected(result, document);
+        },
+      );
+    } else {
+      return Container();
+    }
+  }
+
+  bool _isOwnerOfNote(DocumentSnapshot document) {
+    return (document['creatorUid'] == firebaseUser.uid);
+  }
+
   Widget _getCardArchivedText(DocumentSnapshot document) {
     if (document['archived']) {
       return Padding(
-        padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+        padding: EdgeInsets.only(left: 26.0, bottom: 10.0),
         child: new Text(
           'Archived',
           textAlign: TextAlign.left,
@@ -444,18 +460,20 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   String _getFormattedcreatedDate(int timestamp) {
-    var date = new DateTime.fromMillisecondsSinceEpoch(timestamp);
-    var dateFormat = new DateFormat('dd.MM.yyyy HH:mm');
-    var time = dateFormat.format(date);
+    DateTime date = new DateTime.fromMillisecondsSinceEpoch(timestamp);
+    DateFormat dateFormat = new DateFormat('dd.MM.yyyy HH:mm');
+    String time = "Created at " + dateFormat.format(date);
     return time;
   }
 
   Widget _getCardSharedText(DocumentSnapshot document) {
     if (document['shareTo'] != null) {
       return Padding(
-        padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+        padding: EdgeInsets.only(left: 26.0),
         child: new Text(
-          document['shareTo'] == firebaseUser.email? 'Shared with you':'Sharing',
+          document['shareTo'] == firebaseUser.email
+              ? 'Shared with you'
+              : 'Sharing',
           textAlign: TextAlign.left,
           style: TextStyle(
               fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.red),
@@ -517,6 +535,20 @@ class _NotesPageState extends State<NotesPage> {
               ),
               new SimpleDialogOption(
                 onPressed: () {
+                  Navigator.pop(context, NoteStatus.shared);
+                },
+                child: Row(
+                  children: <Widget>[
+                    _getNoteStatusIcon(NoteStatus.shared),
+                    Text(
+                      'Shared',
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                  ],
+                ),
+              ),
+              new SimpleDialogOption(
+                onPressed: () {
                   Navigator.pop(context, NoteStatus.all);
                 },
                 child: Row(
@@ -540,6 +572,11 @@ class _NotesPageState extends State<NotesPage> {
       case NoteStatus.archived:
         setState(() {
           _noteStatus = NoteStatus.archived;
+        });
+        break;
+      case NoteStatus.shared:
+        setState(() {
+          _noteStatus = NoteStatus.shared;
         });
         break;
       case NoteStatus.all:
